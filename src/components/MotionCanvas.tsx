@@ -143,6 +143,75 @@ export const MotionCanvas: React.FC<MotionCanvasProps> = ({
       // Launch vector
       drawVectorArrow(ctx, launchX, launchY, launchX + 50 * Math.cos((params.launchAngleDeg * Math.PI) / 180), launchY - 50 * Math.sin((params.launchAngleDeg * Math.PI) / 180), '#38bdf8', `v₀=${v0}km/s`, 7);
 
+      // Animated Rocket along path
+      const tFlight = (telemetry.elapsedTime * 0.8) % 6;
+      let rockX = launchX;
+      let rockY = launchY;
+      const rockAngle = - (params.launchAngleDeg * Math.PI) / 180;
+
+      if (params.launchAngleDeg === 90) {
+        if (isEscape) {
+          const dist = tFlight * 120;
+          rockY = launchY - dist;
+        } else {
+          const tPeak = 2.5;
+          const maxH = (v0 / ve) * (height * 0.45);
+          const currentH = maxH * (1 - Math.pow((tFlight - tPeak) / tPeak, 2));
+          rockY = launchY - Math.max(0, currentH);
+        }
+      } else {
+        const rad = (params.launchAngleDeg * Math.PI) / 180;
+        if (isEscape) {
+          const dist = tFlight * 100;
+          rockX = launchX + dist * Math.cos(rad);
+          rockY = launchY - dist * Math.sin(rad);
+        } else {
+          const tPeak = 2.5;
+          const trajFrac = Math.min(1, tFlight / (2 * tPeak));
+          const trajLen = (v0 / ve) * (width * 0.4);
+          rockX = launchX + trajFrac * trajLen * Math.cos(rad);
+          const arcH = ((v0 / ve) * (height * 0.35)) * 4 * trajFrac * (1 - trajFrac);
+          rockY = launchY - arcH;
+        }
+      }
+
+      // Draw Rocket Body & Exhaust
+      ctx.save();
+      ctx.translate(rockX, rockY);
+      ctx.rotate(rockAngle + Math.PI / 2);
+
+      if (isPlaying && (isEscape || rockY <= launchY)) {
+        ctx.fillStyle = '#f97316';
+        ctx.beginPath();
+        ctx.moveTo(-4, 12);
+        ctx.lineTo(0, 18 + Math.random() * 6);
+        ctx.lineTo(4, 12);
+        ctx.fill();
+      }
+
+      ctx.fillStyle = '#f8fafc';
+      drawRoundRect(ctx, -5, -12, 10, 24, 4);
+      ctx.fill();
+      ctx.fillStyle = '#ef4444';
+      ctx.beginPath();
+      ctx.moveTo(-5, -12);
+      ctx.lineTo(0, -20);
+      ctx.lineTo(5, -12);
+      ctx.fill();
+
+      ctx.fillStyle = '#38bdf8';
+      ctx.beginPath();
+      ctx.moveTo(-5, 6);
+      ctx.lineTo(-9, 12);
+      ctx.lineTo(-5, 12);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(5, 6);
+      ctx.lineTo(9, 12);
+      ctx.lineTo(5, 12);
+      ctx.fill();
+      ctx.restore();
+
       // Status Badge
       ctx.font = 'bold 13px Plus Jakarta Sans';
       ctx.textAlign = 'center';
@@ -254,6 +323,56 @@ export const MotionCanvas: React.FC<MotionCanvasProps> = ({
         ctx.textAlign = 'center';
         ctx.fillText('🌌 পরাবৃত্তীয় মুক্তি ও আন্তঃনাক্ষত্রিক গতি (Hyperbolic Escape: v > 11.2 km/s)', centerX, 35);
       }
+
+      // Animated Cannonball along path
+      const tCannon = telemetry.elapsedTime * 1.5;
+      let ballX = mountX;
+      let ballY = mountY - 14;
+
+      if (v < 7.9) {
+        const crashPeriod = 3.0;
+        const progress = Math.min(1, (tCannon % crashPeriod) / (crashPeriod * 0.8));
+        const crashAngle = Math.min(Math.PI * 0.8, (v / 7.9) * Math.PI * 0.7);
+        const endX = centerX + earthR * Math.cos(-Math.PI / 2 + crashAngle);
+        const endY = centerY + earthR * Math.sin(-Math.PI / 2 + crashAngle);
+
+        const cpX = mountX + 90;
+        const cpY = mountY - 10;
+        const u = 1 - progress;
+        ballX = u * u * mountX + 2 * u * progress * cpX + progress * progress * endX;
+        ballY = u * u * (mountY - 14) + 2 * u * progress * cpY + progress * progress * endY;
+
+        if (progress >= 0.98) {
+          ctx.fillStyle = '#f59e0b';
+          ctx.beginPath();
+          ctx.arc(endX, endY, 12 + Math.random() * 4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else if (v >= 7.9 && v < 8.2) {
+        const orbR = earthR + 14;
+        const ang = -Math.PI / 2 + tCannon * 0.8;
+        ballX = centerX + orbR * Math.cos(ang);
+        ballY = centerY + orbR * Math.sin(ang);
+      } else if (v >= 8.2 && v < 11.19) {
+        const aOrb = (earthR + 14) * (1 + (v - 8.2) * 0.35);
+        const bOrb = earthR + 14;
+        const ang = -Math.PI / 2 + tCannon * 0.7;
+        const ellipseCenterY = centerY + (aOrb - earthR - 14) * 0.5;
+        ballX = centerX + bOrb * Math.sin(ang);
+        ballY = ellipseCenterY - aOrb * Math.cos(ang);
+      } else {
+        const escProg = (tCannon * 0.35) % 3;
+        ballX = mountX + escProg * 140;
+        ballY = (mountY - 14) + (v >= 11.5 ? -escProg * 25 : Math.pow(escProg, 1.8) * 40);
+      }
+
+      ctx.fillStyle = '#eab308';
+      ctx.beginPath();
+      ctx.arc(ballX, ballY, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
     }
 
     // ==========================================
