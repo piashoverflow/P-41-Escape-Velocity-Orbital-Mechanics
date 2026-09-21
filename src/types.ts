@@ -1,24 +1,46 @@
-export type P41Mode = 'newtons_cannon' | 'planetary_escape' | 'atmospheric_retention' | 'kepler_newton_bridge';
+export type Language = 'bn' | 'en';
+export type AppTheme = 'clean_bright' | 'midnight';
+export type PresetMode = 'escape_velocity' | 'newton_cannon' | 'atmospheric_retention' | 'newton_kepler_bridge';
 
-export interface CannonParams {
-  launchVelocityKmS: number; // 3 to 16 km/s
-  mountainHeightKm: number; // 200 to 1000 km
-  showTrajectoryHistory: boolean;
-  centralBody: 'earth' | 'moon' | 'mars';
+export interface SimulationParams {
+  preset: PresetMode;
+  theme: AppTheme;
+
+  // Launch & Cannon
+  launchVelocityKmS: number; // km/s (1 to 18 km/s)
+  launchAngleDeg: number; // deg (0 = horizontal orbital, 90 = vertical escape)
+  selectedPlanet: 'earth' | 'moon' | 'mars' | 'jupiter';
+
+  // Atmospheric Gas
+  selectedGas: 'H2' | 'He' | 'H2O' | 'N2' | 'O2' | 'CO2';
+  planetTempK: number; // Kelvin
+
+  // Newton-Kepler Bridge
+  orbitAltitudeKm: number; // km (300 to 40000 km)
+
+  // Toggles
+  showVectors: boolean;
+  showOrbitTrack: boolean;
+  showGrid: boolean;
+  slowMo: boolean;
 }
 
-export interface PlanetaryEscapeParams {
-  selectedPlanet: 'moon' | 'mars' | 'earth' | 'jupiter' | 'sun';
-  rocketSpeedRatio: number; // fraction of escape velocity (0.2 to 1.5)
-}
+export interface TelemetryState {
+  elapsedTime: number;
+  currentSpeedKmS: number;
+  escapeSpeedKmS: number; // 11.2 km/s on Earth
+  circularSpeedKmS: number; // 7.91 km/s on Earth
+  trajectoryType: 'crash' | 'circular' | 'elliptical' | 'parabolic_escape' | 'hyperbolic_escape';
+  currentAltKm: number;
+  currentRangeKm: number;
 
-export interface AtmosphericParams {
-  temperatureKelvin: number; // 100 to 500 K
-  celestialBody: 'earth' | 'moon' | 'mars' | 'jupiter';
-  selectedGases: string[]; // ['H2', 'He', 'H2O', 'N2', 'O2', 'CO2']
-}
+  // Atmosphere
+  vRmsKmS: number;
+  retentionRatio: number; // v_rms / v_e
+  isRetained: boolean;
 
-export interface KeplerNewtonBridgeParams {
-  orbitalRadiusKm: number; // 7,000 to 42,000 km
-  centralMassFactor: number; // 0.5 to 2.0
+  // Newton-Kepler Bridge
+  orbitalSpeedKmS: number;
+  orbitalPeriodHours: number;
+  keplerConstant: number;
 }
