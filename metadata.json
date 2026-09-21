@@ -1,0 +1,6 @@
+{
+  "name": "P-41: Escape Velocity & Orbital Conics Mechanics",
+  "description": "Interactive physics simulation of escape velocity, Newton's cannonball conic sections, atmospheric retention, and the Newton-Kepler bridge.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
